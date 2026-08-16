@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      width: 300px;
+      margin: 0;
+      padding: 14px;
+      font-size: 13px;
+      color: #222;
+    }
+    h1 { font-size: 15px; margin: 0 0 10px; }
+    button {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 8px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      background: #f5f5f5;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    button:hover { background: #e9e9e9; }
+    button:disabled { opacity: 0.6; cursor: default; }
+    .kiOption {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .kiOption.deaktiviert { color: #999; cursor: default; }
+    .kiOption input { margin: 0; }
+    #kiOptionHinweis { font-size: 11px; color: #999; }
+    #status { min-height: 32px; margin: 6px 0; white-space: pre-line; }
+    .fehler { color: #b02a37; }
+    .legende { margin-top: 8px; border-top: 1px solid #ddd; padding-top: 8px; }
+    .legende div { display: flex; align-items: center; gap: 6px; margin: 3px 0; }
+    .punkt { width: 12px; height: 12px; border-radius: 3px; display: inline-block; flex-shrink: 0; }
+    .rot { background: rgba(220, 53, 69, 0.6); }
+    .gelb { background: rgba(255, 193, 7, 0.75); }
+    .gruen { background: rgba(25, 135, 84, 0.5); }
+    a { color: #0a58ca; }
+    .hinweis { color: #666; font-size: 11.5px; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <h1>KI-Text-Finder</h1>
+  <label class="kiOption" id="kiOptionLabel">
+    <input type="checkbox" id="mitKi">
+    mit KI untersuchen
+    <span id="kiOptionHinweis"></span>
+  </label>
+  <button id="analysieren">Seite analysieren</button>
+  <button id="entfernen">Markierungen entfernen</button>
+  <div id="status"></div>
+  <div class="legende">
+    <div><span class="punkt rot"></span> höchstwahrscheinlich KI-generiert</div>
+    <div><span class="punkt gelb"></span> wahrscheinlich KI-generiert</div>
+    <div><span class="punkt gruen"></span> vermutlich nicht KI-generiert</div>
+  </div>
+  <div class="hinweis">
+    Stilbasierte Einschätzung, kein Nachweis. Begründung je Abschnitt per Maus-Tooltip.
+    Ohne API-Key läuft eine lokale Muster-Erkennung; mit Key analysiert Claude genauer.
+    <a href="#" id="einstellungen">Einstellungen</a>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

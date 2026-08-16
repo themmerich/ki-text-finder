@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <title>KI-Text-Finder – Einstellungen</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      max-width: 560px;
+      margin: 40px auto;
+      font-size: 14px;
+      color: #222;
+      padding: 0 16px;
+    }
+    h1 { font-size: 18px; }
+    label { display: block; margin: 16px 0 4px; font-weight: 600; }
+    input, select {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 14px;
+      box-sizing: border-box;
+    }
+    button {
+      margin-top: 16px;
+      padding: 8px 20px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      background: #f5f5f5;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    button:hover { background: #e9e9e9; }
+    #status { margin-top: 10px; color: #146c43; }
+    .hinweis { color: #666; font-size: 12.5px; margin-top: 4px; }
+  </style>
+</head>
+<body>
+  <h1>KI-Text-Finder – Einstellungen</h1>
+
+  <label for="apiKey">Anthropic API-Key (optional)</label>
+  <input type="password" id="apiKey" placeholder="sk-ant-...">
+  <div class="hinweis">
+    Ohne Key nutzt die Erweiterung eine lokale Muster-Erkennung (kostenlos, offline,
+    aber gröber). Mit Key analysiert Claude die Texte deutlich genauer.
+    Der Key wird nur lokal im Browser gespeichert (chrome.storage.local) und
+    ausschließlich an api.anthropic.com gesendet. Einen Key bekommst du unter
+    platform.claude.com. Feld leeren und speichern schaltet zurück auf die lokale Erkennung.
+  </div>
+
+  <label for="model">Modell</label>
+  <select id="model">
+    <option value="claude-opus-5">Claude Opus 5 (beste Qualität, Standard)</option>
+    <option value="claude-sonnet-5">Claude Sonnet 5 (schneller, günstiger)</option>
+    <option value="claude-haiku-4-5">Claude Haiku 4.5 (am günstigsten)</option>
+  </select>
+  <div class="hinweis">
+    Die Kosten pro analysierter Seite liegen je nach Modell und Textmenge
+    zwischen einem Bruchteil eines Cents (Haiku) und wenigen Cent (Opus).
+  </div>
+
+  <button id="speichern">Speichern</button>
+  <div id="status"></div>
+
+  <script src="options.js"></script>
+</body>
+</html>

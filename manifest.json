@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "KI-Text-Finder",
+  "version": "0.1.0",
+  "description": "Markiert Textabschnitte der aktuellen Seite als Ampel (rot/gelb/grün) je nach Wahrscheinlichkeit, dass sie KI-generiert sind. Analyse über die Claude API mit eigenem API-Key.",
+  "permissions": ["storage", "scripting", "activeTab"],
+  "host_permissions": ["https://api.anthropic.com/*"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "KI-Text-Finder"
+  },
+  "options_page": "options.html"
+}
