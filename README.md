@@ -1,7 +1,7 @@
 # KI-Text-Finder
 
 ![Chrome Manifest V3](https://img.shields.io/badge/Chrome-Manifest%20V3-4285F4?logo=googlechrome&logoColor=white)
-![Version](https://img.shields.io/badge/Version-0.1.0-blue)
+![Version](https://img.shields.io/badge/Version-0.3.0-blue)
 ![Analyse](https://img.shields.io/badge/Analyse-lokal%20oder%20Claude%20API-8A63D2)
 
 Chrome-Erweiterung, die Textabschnitte der aktuellen Webseite danach einfärbt, wie wahrscheinlich sie KI-generiert sind. Die Bewertung folgt einem Ampelschema; die Begründung zu jedem Abschnitt erscheint als Tooltip, wenn man mit der Maus darüberfährt.
@@ -51,13 +51,24 @@ Der Key wird nur in `chrome.storage.local` gespeichert und ausschließlich an ap
 
 Icon anklicken → **„Seite analysieren"**. Nach einigen Sekunden sind die Absätze eingefärbt; das Popup zeigt die Verteilung und den verwendeten Analyse-Modus. **„Markierungen entfernen"** stellt die Seite wieder her.
 
-Ist auf der Seite Text markiert, bewertet die Erweiterung nur die Abschnitte, die die Markierung berührt – der Button heißt dann **„Markierten Text analysieren"**. Das spart im Claude-Modus Kosten und Wartezeit und erreicht auch Stellen weit unten auf sehr langen Seiten, wo die Obergrenze von 120 Abschnitten sonst greift. Bewertet und eingefärbt wird immer der ganze Absatz, auch wenn die Markierung nur einen Teil davon abdeckt.
-
 Die Checkbox **„mit KI untersuchen"** steuert den Modus: Ohne hinterlegten Key ist sie ausgegraut und es läuft immer die lokale Erkennung. Mit Key ist sie standardmäßig aktiv, kann aber abgewählt werden, wenn die schnelle, kostenlose Analyse reichen soll. Die Auswahl bleibt gespeichert.
 
 Zum Ausprobieren liegt eine [Testseite](test-seite.html) bei, deren Absätze die typischen Fälle abdecken: Floskel-Häufung und Chatbot-Artefakt, einzelne Auffälligkeiten, unauffälliger Text – jeweils auf Deutsch und Englisch, dazu ein deutscher Absatz mit englischer Typografie.
 
 <br clear="right">
+
+### Nur einen Ausschnitt prüfen
+
+Ist auf der Seite Text markiert, bewertet die Erweiterung nur die Abschnitte, die die Markierung berührt – der Button heißt dann **„Markierten Text analysieren"**. Das spart im Claude-Modus Kosten und Wartezeit und erreicht auch Stellen weit unten auf sehr langen Seiten, wo die Obergrenze von 120 Abschnitten sonst greift. Bewertet und eingefärbt wird immer der ganze Absatz, auch wenn die Markierung nur einen Teil davon abdeckt. Ist die Markierung kürzer als 150 Zeichen, meldet das Popup das, statt eine Einschätzung auf dünner Grundlage abzugeben.
+
+<table>
+<tr>
+<td width="66%"><img src="docs/screenshots/auswahl.png" alt="Zwei Absätze sind teilweise markiert und komplett rot eingefärbt, die übrigen Absätze der Seite bleiben ungefärbt"></td>
+<td><img src="docs/screenshots/popup-markierung.png" alt="Popup mit dem Button „Markierten Text analysieren" und dem Ergebnis für den markierten Bereich"></td>
+</tr>
+</table>
+
+<sub>Die Markierung reicht in zwei Absätze hinein – bewertet werden beide vollständig, der Rest der Seite bleibt unberührt.</sub>
 
 ## Wie es funktioniert
 

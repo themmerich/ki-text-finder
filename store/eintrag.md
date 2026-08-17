@@ -43,6 +43,7 @@ Wird automatisch aus der `description` in [manifest.json](../manifest.json) übe
 - Store-Icon 128×128: [icons/icon128.png](../icons/icon128.png)
 - Screenshots 1280×800: [store/screenshots/](screenshots/)
   - `markierte-seite.png` – Testseite mit Ampel-Markierung und Tooltip
+  - `auswahl.png` – markierter Text: nur die berührten Absätze werden bewertet
   - `popup.png` – Popup mit Analyse-Ergebnis
   - `einstellungen.png` – Einstellungsseite
 
