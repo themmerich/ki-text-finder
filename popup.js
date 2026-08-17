@@ -40,6 +40,26 @@ async function ensureContentScript(tabId) {
   });
 }
 
+function analysierbar(tab) {
+  return Boolean(tab?.id) && /^(https?|file):/.test(tab.url || "");
+}
+
+// Beim Öffnen prüfen, ob auf der Seite etwas markiert ist: dann analysiert
+// der Klick nur die markierten Abschnitte, und der Button sagt das auch.
+(async () => {
+  try {
+    const tab = await activeTab();
+    if (!analysierbar(tab)) return;
+    await ensureContentScript(tab.id);
+    const result = await chrome.tabs.sendMessage(tab.id, { cmd: "hasSelection" });
+    if (result?.hasSelection) {
+      analysierenBtn.textContent = "Markierten Text analysieren";
+    }
+  } catch (_) {
+    // Kein Content Script erreichbar: Standardbeschriftung bleibt stehen.
+  }
+})();
+
 const MODUS_TEXT = {
   ki: "Analyse: Claude API",
   lokal: "Analyse: lokale Muster-Erkennung",
@@ -48,13 +68,13 @@ const MODUS_TEXT = {
 
 analysierenBtn.addEventListener("click", async () => {
   const tab = await activeTab();
-  if (!tab?.id || !/^(https?|file):/.test(tab.url || "")) {
+  if (!analysierbar(tab)) {
     setStatus("Diese Seite kann nicht analysiert werden.", true);
     return;
   }
 
   analysierenBtn.disabled = true;
-  setStatus("Analysiere Seite … das kann je nach Länge etwas dauern.");
+  setStatus("Analysiere … das kann je nach Textmenge etwas dauern.");
 
   try {
     await ensureContentScript(tab.id);
@@ -63,8 +83,12 @@ analysierenBtn.addEventListener("click", async () => {
       setStatus(result?.error || "Unbekannter Fehler", true);
     } else {
       const c = result.counts;
+      const umfang =
+        result.scope === "selection"
+          ? "Abschnitte im markierten Bereich"
+          : "Abschnitte";
       let text =
-        `${result.total} Abschnitte bewertet:\n` +
+        `${result.total} ${umfang} bewertet:\n` +
         `rot: ${c.rot}, gelb: ${c.gelb}, grün: ${c.gruen}\n` +
         (MODUS_TEXT[result.mode] || "");
       if (result.mode === "lokal-fallback" && result.apiError) {
