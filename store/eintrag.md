@@ -19,15 +19,19 @@ Wird automatisch aus der `description` in [manifest.json](../manifest.json) übe
 >
 > Die Begründung zu jedem Abschnitt erscheint als Tooltip, wenn du mit der Maus darüberfährst.
 >
-> GANZE SEITE ODER NUR EIN AUSSCHNITT
+> GANZE SEITE, EIN AUSSCHNITT ODER EIGENER TEXT
 >
-> Ohne Markierung wird die ganze Seite bewertet. Markierst du vorher einen Textabschnitt, prüft die Erweiterung nur diesen Bereich – schneller, günstiger und gezielt bei langen Seiten.
+> Ohne Markierung wird die ganze Seite bewertet. Markierst du vorher einen Textabschnitt, prüft die Erweiterung nur diesen Bereich – schneller, günstiger und gezielt bei langen Seiten. Und über „Eigenen Text prüfen" fügst du beliebigen Text direkt ins Popup ein, etwa eine E-Mail oder einen Kommentar.
 >
 > ZWEI ANALYSE-MODI
 >
 > Ohne API-Key (Standard): Eine lokale Regel-Engine prüft die Texte auf bekannte KI-Stilmuster – Floskeln, Gedankenstrich-Häufung, Chatbot-Artefakte und mehr. Kostenlos, und kein Text verlässt den Browser.
 >
 > Mit eigenem Anthropic API-Key: Claude bewertet die Abschnitte inhaltlich, was deutlich genauer ist. Der Key wird nur lokal gespeichert und ausschließlich an api.anthropic.com gesendet. Schlägt die API fehl, springt automatisch die lokale Erkennung ein.
+>
+> OHNE KONTO, OHNE LIMIT
+>
+> Kein Login, kein Tageslimit, keine Anbieter-Server. Die Begründung steht direkt am Text statt als nackter Prozentwert – jede Einstufung nennt die konkreten Auffälligkeiten.
 >
 > WICHTIG
 >
@@ -53,7 +57,7 @@ Wird automatisch aus der `description` in [manifest.json](../manifest.json) übe
 - **activeTab / scripting:** Liest nach Klick auf „Seite analysieren" die sichtbaren Textabschnitte der aktiven Seite und färbt sie ein. Beim Öffnen des Popups wird zusätzlich abgefragt, ob auf der Seite Text markiert ist, um den Button passend zu beschriften; dabei wird nur geprüft, ob eine Markierung existiert, nicht deren Inhalt gelesen. Kein Zugriff ohne Nutzeraktion (das Öffnen des Popups ist eine solche).
 - **storage:** Speichert API-Key und Einstellungen lokal auf dem Gerät.
 - **Host-Berechtigung api.anthropic.com:** Sendet im optionalen Claude-Modus die Textabschnitte zur Bewertung an die Claude API.
-- **Datenerhebung:** „Website content" ankreuzen (Textabschnitte der analysierten Seite gehen im Claude-Modus an Anthropic) sowie „Authentication information" für den vom Nutzer selbst hinterlegten API-Key (wird nur lokal gespeichert und an api.anthropic.com übertragen). Keine Weitergabe an weitere Dritte, kein Verkauf, keine Nutzung für fremde Zwecke.
+- **Datenerhebung:** „Website content" ankreuzen (Textabschnitte der analysierten Seite bzw. vom Nutzer eingefügter Text gehen im Claude-Modus an Anthropic) sowie „Authentication information" für den vom Nutzer selbst hinterlegten API-Key (wird nur lokal gespeichert und an api.anthropic.com übertragen). Keine Weitergabe an weitere Dritte, kein Verkauf, keine Nutzung für fremde Zwecke.
 - **Datenschutzerklärung (URL):** https://github.com/themmerich/ki-text-finder/blob/main/DATENSCHUTZ.md
 
 ## Einreichen

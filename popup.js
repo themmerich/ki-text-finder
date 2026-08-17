@@ -129,6 +129,99 @@ entfernenBtn.addEventListener("click", async () => {
   }
 });
 
+// Eigenen Text prüfen: eingefügter Text geht direkt an den Service Worker,
+// ohne Umweg über die Seite. Gleiche Regeln wie bei der Seitenanalyse
+// (Mindestlänge, Kappung), gleiche Modus-Wahl (lokal oder Claude).
+const MIN_CHARS = 150;
+const MAX_TEXT_SEGMENTS = 40;
+const MAX_CHARS_PER_SEGMENT = 2000;
+
+const textPruefenBtn = document.getElementById("textPruefen");
+const textBereich = document.getElementById("textBereich");
+const eigenerTextEl = document.getElementById("eigenerText");
+const textAnalysierenBtn = document.getElementById("textAnalysieren");
+const textErgebnisEl = document.getElementById("textErgebnis");
+
+textPruefenBtn.addEventListener("click", () => {
+  textBereich.hidden = !textBereich.hidden;
+  if (!textBereich.hidden) eigenerTextEl.focus();
+});
+
+// Absätze ab MIN_CHARS einzeln bewerten; besteht der Text nur aus kürzeren
+// Absätzen, wird er als Ganzes bewertet, sofern er insgesamt lang genug ist.
+function textSegmente(roh) {
+  const bloecke = roh
+    .split(/\n\s*\n/)
+    .map((t) => t.trim())
+    .filter(Boolean);
+  let lange = bloecke.filter((t) => t.length >= MIN_CHARS);
+  if (lange.length === 0 && roh.trim().length >= MIN_CHARS) {
+    lange = [roh.trim()];
+  }
+  return lange
+    .slice(0, MAX_TEXT_SEGMENTS)
+    .map((t, i) => ({ id: i, text: t.slice(0, MAX_CHARS_PER_SEGMENT) }));
+}
+
+const STUFEN_MAP = Object.fromEntries(AMPEL_STUFEN.map((s) => [s.id, s]));
+
+textAnalysierenBtn.addEventListener("click", async () => {
+  const segments = textSegmente(eigenerTextEl.value);
+  textErgebnisEl.textContent = "";
+  if (segments.length === 0) {
+    const hinweis = document.createElement("div");
+    hinweis.className = "fehler";
+    hinweis.textContent = `Der Text ist zu kurz für eine Bewertung (mindestens ${MIN_CHARS} Zeichen).`;
+    textErgebnisEl.appendChild(hinweis);
+    return;
+  }
+
+  textAnalysierenBtn.disabled = true;
+  textErgebnisEl.textContent = "Prüfe …";
+  try {
+    const result = await chrome.runtime.sendMessage({ cmd: "classify", segments });
+    textErgebnisEl.textContent = "";
+    if (!result?.ok) {
+      throw new Error(result?.error || "Unbekannter Fehler");
+    }
+    for (const rating of result.ratings) {
+      const stufe = STUFEN_MAP[rating.stufe];
+      if (!stufe) continue;
+      const eintrag = document.createElement("div");
+      eintrag.className = "textTreffer";
+      eintrag.style.background = stufe.bg;
+      const kopf = document.createElement("strong");
+      kopf.textContent = stufe.label;
+      eintrag.appendChild(kopf);
+      if (segments.length > 1) {
+        const ausschnitt = document.createElement("div");
+        ausschnitt.className = "ausschnitt";
+        const text = segments[rating.id]?.text || "";
+        ausschnitt.textContent = `„${text.slice(0, 70)}${text.length > 70 ? " …" : ""}"`;
+        eintrag.appendChild(ausschnitt);
+      }
+      const grund = document.createElement("div");
+      grund.className = "grund";
+      grund.textContent = rating.grund;
+      eintrag.appendChild(grund);
+      textErgebnisEl.appendChild(eintrag);
+    }
+    const modus = document.createElement("div");
+    modus.className = result.apiError ? "fehler" : "";
+    modus.textContent =
+      (MODUS_TEXT[result.mode] || "") +
+      (result.apiError ? `\n(${result.apiError})` : "");
+    textErgebnisEl.appendChild(modus);
+  } catch (err) {
+    const fehler = document.createElement("div");
+    fehler.className = "fehler";
+    fehler.textContent = String(err.message || err);
+    textErgebnisEl.appendChild(fehler);
+  } finally {
+    textAnalysierenBtn.disabled = false;
+  }
+});
+
 document.getElementById("einstellungen").addEventListener("click", (e) => {
   e.preventDefault();
   chrome.runtime.openOptionsPage();

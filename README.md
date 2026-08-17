@@ -54,6 +54,12 @@ Icon anklicken → **„Seite analysieren"**. Nach einigen Sekunden sind die Abs
 
 Das Ergebnis geht beim Schließen des Popups nicht verloren: Beim nächsten Öffnen zeigt es die letzte Statistik wieder an, solange die Markierungen auf der Seite stehen. Kappt die Obergrenze von 120 Abschnitten die Analyse einer sehr langen Seite, sagt das Popup das („120 von 260 Abschnitten bewertet").
 
+Über **„Eigenen Text prüfen"** lässt sich auch Text bewerten, der auf keiner Webseite steht – eine E-Mail, eine eingereichte Arbeit, ein Kommentar. Einfügen, prüfen, und das Popup zeigt die Einstufung samt Begründung je Absatz. Es gelten dieselben Regeln wie bei der Seitenanalyse (Mindestlänge 150 Zeichen, gewählter Analyse-Modus).
+
+<p align="center">
+  <img src="docs/screenshots/popup-text.png" alt="Popup mit geöffnetem Eingabefeld: eingefügter Text wurde als höchstwahrscheinlich KI-generiert eingestuft, mit Begründung" width="280">
+</p>
+
 Die Checkbox **„mit KI untersuchen"** steuert den Modus: Ohne hinterlegten Key ist sie ausgegraut und es läuft immer die lokale Erkennung. Mit Key ist sie standardmäßig aktiv, kann aber abgewählt werden, wenn die schnelle, kostenlose Analyse reichen soll. Die Auswahl bleibt gespeichert.
 
 Zum Ausprobieren liegt eine [Testseite](test-seite.html) bei, deren Absätze die typischen Fälle abdecken: Floskel-Häufung und Chatbot-Artefakt, einzelne Auffälligkeiten, unauffälliger Text – jeweils auf Deutsch und Englisch, dazu ein deutscher Absatz mit englischer Typografie.
