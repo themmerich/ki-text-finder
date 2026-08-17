@@ -1,7 +1,7 @@
 # KI-Text-Finder
 
 ![Chrome Manifest V3](https://img.shields.io/badge/Chrome-Manifest%20V3-4285F4?logo=googlechrome&logoColor=white)
-![Version](https://img.shields.io/badge/Version-0.3.1-blue)
+![Version](https://img.shields.io/badge/Version-1.0-blue)
 ![Tests](https://github.com/themmerich/ki-text-finder/actions/workflows/tests.yml/badge.svg)
 ![Analyse](https://img.shields.io/badge/Analyse-lokal%20oder%20Claude%20API-8A63D2)
 
