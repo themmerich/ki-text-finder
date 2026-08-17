@@ -30,7 +30,7 @@ Die Erweiterung kennt zwei Wege, Texte zu bewerten:
 | Datenfluss | kein Text verlässt den Browser | Textabschnitte gehen an api.anthropic.com |
 | Genauigkeit | erkennt unbearbeiteten KI-Text zuverlässig, übersieht polierten aber weitgehend | deutlich genauer, bewertet inhaltlich |
 
-Ohne API-Key prüft die lokale Regel-Engine ([heuristik.js](heuristik.js)) die Texte auf bekannte KI-Stilmuster: Floskel-Listen, Gedankenstrich-Häufung, „nicht nur … sondern auch", Verbindungswort-Ketten, Chatbot-Zitierartefakte. Mit Key bewertet Claude die Abschnitte. Schlägt die API fehl, fällt die Erweiterung automatisch auf die lokale Erkennung zurück; das Popup zeigt an, welcher Modus gelaufen ist.
+Ohne API-Key prüft die lokale Regel-Engine ([heuristik.js](heuristik.js)) die Texte auf bekannte KI-Stilmuster: Floskel-Listen, Gedankenstrich-Häufung, „nicht nur … sondern auch", Verbindungswort-Ketten, Chatbot-Zitierartefakte. Sie erkennt dabei je Abschnitt die Sprache (Deutsch/Englisch) und wendet zusätzlich sprachspezifische Signale an – im Deutschen etwa Geviertstriche, englischen Anführungszeichen-Stil und Titel-Großschreibung nach englischem Muster. Die erkannte Sprache steht mit im Tooltip. Mit Key bewertet Claude die Abschnitte. Schlägt die API fehl, fällt die Erweiterung automatisch auf die lokale Erkennung zurück; das Popup zeigt an, welcher Modus gelaufen ist.
 
 ## Installation
 
@@ -53,7 +53,7 @@ Icon anklicken → **„Seite analysieren"**. Nach einigen Sekunden sind die Abs
 
 Die Checkbox **„mit KI untersuchen"** steuert den Modus: Ohne hinterlegten Key ist sie ausgegraut und es läuft immer die lokale Erkennung. Mit Key ist sie standardmäßig aktiv, kann aber abgewählt werden, wenn die schnelle, kostenlose Analyse reichen soll. Die Auswahl bleibt gespeichert.
 
-Zum Ausprobieren liegt eine [Testseite](test-seite.html) bei, deren Absätze die vier Fälle abdecken (Floskel-Häufung, Chatbot-Artefakt, einzelne Auffälligkeiten, unauffälliger Text).
+Zum Ausprobieren liegt eine [Testseite](test-seite.html) bei, deren Absätze die typischen Fälle abdecken: Floskel-Häufung und Chatbot-Artefakt, einzelne Auffälligkeiten, unauffälliger Text – jeweils auf Deutsch und Englisch, dazu ein deutscher Absatz mit englischer Typografie.
 
 <br clear="right">
 
@@ -63,7 +63,7 @@ Zum Ausprobieren liegt eine [Testseite](test-seite.html) bei, deren Absätze die
 |---|---|
 | [content.js](content.js) | sammelt sichtbare Textblöcke (`p`, `li`, `blockquote`, `dd`, `figcaption`) ab 150 Zeichen, höchstens 120 pro Seite, und färbt sie nach der Bewertung ein |
 | [background.js](background.js) | Service Worker; entscheidet je nach Key zwischen lokaler Engine und Claude API und bündelt lange Seiten in mehrere Anfragen |
-| [heuristik.js](heuristik.js) | lokale Regel-Engine: gewichteter Punktwert über Musterlisten (deutsch und englisch); eindeutige Chatbot-Artefakte führen direkt zu Rot |
+| [heuristik.js](heuristik.js) | lokale Regel-Engine: Spracherkennung je Abschnitt (Stoppwort-Zählung), gewichteter Punktwert über gemeinsame und sprachspezifische Musterlisten; eindeutige Chatbot-Artefakte führen direkt zu Rot |
 | [popup.js](popup.js) / [popup.html](popup.html) | Popup mit Analyse-Buttons, Modus-Checkbox und Legende |
 | [options.js](options.js) / [options.html](options.html) | Einstellungsseite für API-Key und Modellwahl |
 
