@@ -161,3 +161,9 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     .catch((err) => sendResponse({ ok: false, error: String(err.message || err) }));
   return true; // sendResponse wird asynchron aufgerufen
 });
+
+// Nach der Installation einmal die Einstellungen öffnen: dort steht die
+// Wahl zwischen lokaler Erkennung und Claude-Analyse erklärt.
+chrome.runtime.onInstalled.addListener((details) => {
+  if (details.reason === "install") chrome.runtime.openOptionsPage();
+});

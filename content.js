@@ -15,6 +15,10 @@
   // Die Elemente des letzten Laufs, Index = Segment-id.
   let segmentEls = [];
 
+  // Ergebnis der letzten Analyse; das Popup fragt es beim Öffnen ab,
+  // damit die Statistik das Schließen des Popups überlebt.
+  let lastResult = null;
+
   function isVisible(el) {
     const style = getComputedStyle(el);
     if (!el.offsetParent && style.position !== "fixed") return false;
@@ -60,14 +64,18 @@
       }
     }
 
-    const segmente = kandidaten
-      .filter(({ el }) => !hatKandidatenNachfahren.has(el))
-      .slice(0, MAX_SEGMENTS);
+    const innerste = kandidaten.filter(
+      ({ el }) => !hatKandidatenNachfahren.has(el)
+    );
+    const segmente = innerste.slice(0, MAX_SEGMENTS);
     segmentEls = segmente.map(({ el }) => el);
-    return segmente.map(({ text }, i) => ({
-      id: i,
-      text: text.slice(0, MAX_CHARS_PER_SEGMENT)
-    }));
+    return {
+      gesamt: innerste.length, // vor der Obergrenze – fürs Popup ("x von y")
+      segments: segmente.map(({ text }, i) => ({
+        id: i,
+        text: text.slice(0, MAX_CHARS_PER_SEGMENT)
+      }))
+    };
   }
 
   function applyRatings(ratings) {
@@ -75,13 +83,17 @@
     for (const rating of ratings) {
       const el = segmentEls[rating.id];
       const color = COLORS[rating.stufe];
-      if (!el || !color) continue;
+      // isConnected: auf dynamischen Seiten können Elemente zwischen
+      // Einsammeln und API-Antwort ausgetauscht worden sein.
+      if (!el || !el.isConnected || !color) continue;
       if (!("kiAmpelOrigBg" in el.dataset)) {
         el.dataset.kiAmpelId = String(rating.id); // Marker für clearHighlights
         el.dataset.kiAmpelOrigBg = el.style.backgroundColor;
+        el.dataset.kiAmpelOrigColor = el.style.color;
         el.dataset.kiAmpelOrigTitle = el.title;
       }
       el.style.backgroundColor = color.bg;
+      el.style.color = AMPEL_TEXTFARBE;
       el.style.transition = "background-color 0.3s";
       el.title = `KI-Text-Finder: ${color.label}\n${rating.grund}`;
       counts[rating.stufe]++;
@@ -92,9 +104,11 @@
   function clearHighlights() {
     for (const el of document.querySelectorAll("[data-ki-ampel-id]")) {
       el.style.backgroundColor = el.dataset.kiAmpelOrigBg || "";
+      el.style.color = el.dataset.kiAmpelOrigColor || "";
       el.title = el.dataset.kiAmpelOrigTitle || "";
       delete el.dataset.kiAmpelId;
       delete el.dataset.kiAmpelOrigBg;
+      delete el.dataset.kiAmpelOrigColor;
       delete el.dataset.kiAmpelOrigTitle;
     }
   }
@@ -102,13 +116,18 @@
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     if (message?.cmd === "clear") {
       clearHighlights();
+      lastResult = null;
       sendResponse({ ok: true });
       return false;
     }
-    // Das Popup fragt beim Öffnen, ob etwas markiert ist, und beschriftet
-    // seinen Button entsprechend.
-    if (message?.cmd === "hasSelection") {
-      sendResponse({ ok: true, hasSelection: selectionRanges().length > 0 });
+    // Das Popup fragt beim Öffnen nach Markierung (für die Button-
+    // Beschriftung) und dem letzten Analyse-Ergebnis (für die Statistik).
+    if (message?.cmd === "getStatus") {
+      sendResponse({
+        ok: true,
+        hasSelection: selectionRanges().length > 0,
+        lastResult
+      });
       return false;
     }
     if (message?.cmd !== "analyze") return false;
@@ -117,7 +136,7 @@
     const scope = ranges.length > 0 ? "selection" : "page";
 
     clearHighlights();
-    const segments = collectSegments(ranges);
+    const { segments, gesamt } = collectSegments(ranges);
     if (segments.length === 0) {
       sendResponse({
         ok: false,
@@ -139,14 +158,15 @@
         return;
       }
       const counts = applyRatings(result.ratings);
-      sendResponse({
-        ok: true,
+      lastResult = {
         counts,
         total: segments.length,
+        gesamt,
         scope,
         mode: result.mode,
         apiError: result.apiError
-      });
+      };
+      sendResponse({ ok: true, ...lastResult });
     });
     return true; // asynchrone Antwort
   });

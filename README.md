@@ -1,7 +1,8 @@
 # KI-Text-Finder
 
 ![Chrome Manifest V3](https://img.shields.io/badge/Chrome-Manifest%20V3-4285F4?logo=googlechrome&logoColor=white)
-![Version](https://img.shields.io/badge/Version-0.3.0-blue)
+![Version](https://img.shields.io/badge/Version-0.3.1-blue)
+![Tests](https://github.com/themmerich/ki-text-finder/actions/workflows/tests.yml/badge.svg)
 ![Analyse](https://img.shields.io/badge/Analyse-lokal%20oder%20Claude%20API-8A63D2)
 
 Chrome-Erweiterung, die Textabschnitte der aktuellen Webseite danach einfärbt, wie wahrscheinlich sie KI-generiert sind. Die Bewertung folgt einem Ampelschema; die Begründung zu jedem Abschnitt erscheint als Tooltip, wenn man mit der Maus darüberfährt.
@@ -51,6 +52,8 @@ Der Key wird nur in `chrome.storage.local` gespeichert und ausschließlich an ap
 
 Icon anklicken → **„Seite analysieren"**. Nach einigen Sekunden sind die Absätze eingefärbt; das Popup zeigt die Verteilung und den verwendeten Analyse-Modus. **„Markierungen entfernen"** stellt die Seite wieder her.
 
+Das Ergebnis geht beim Schließen des Popups nicht verloren: Beim nächsten Öffnen zeigt es die letzte Statistik wieder an, solange die Markierungen auf der Seite stehen. Kappt die Obergrenze von 120 Abschnitten die Analyse einer sehr langen Seite, sagt das Popup das („120 von 260 Abschnitten bewertet").
+
 Die Checkbox **„mit KI untersuchen"** steuert den Modus: Ohne hinterlegten Key ist sie ausgegraut und es läuft immer die lokale Erkennung. Mit Key ist sie standardmäßig aktiv, kann aber abgewählt werden, wenn die schnelle, kostenlose Analyse reichen soll. Die Auswahl bleibt gespeichert.
 
 Zum Ausprobieren liegt eine [Testseite](test-seite.html) bei, deren Absätze die typischen Fälle abdecken: Floskel-Häufung und Chatbot-Artefakt, einzelne Auffälligkeiten, unauffälliger Text – jeweils auf Deutsch und Englisch, dazu ein deutscher Absatz mit englischer Typografie.
@@ -82,6 +85,14 @@ Ist auf der Seite Text markiert, bewertet die Erweiterung nur die Abschnitte, di
 | [ampel.js](ampel.js) / [modelle.js](modelle.js) | gemeinsame Definitionen: Ampelstufen (Farben, Beschriftungen, Schema-Werte) und Modell-Liste |
 
 Die Claude-Anfragen nutzen Structured Outputs mit festem JSON-Schema, damit die Antwort maschinell auswertbar bleibt. Im lokalen Modus verlässt kein Text den Browser.
+
+## Tests
+
+```bash
+node tests/run-tests.js
+```
+
+Prüft die Syntax aller Skripte, die Regel-Engine gegen die erwarteten Einstufungen der Testseite und das Content Script (Markierungs-Fälle, Ergebnis-Zurücksetzen) im Headless-Chrome. Läuft als GitHub Action bei jedem Push.
 
 ## Grenzen
 
