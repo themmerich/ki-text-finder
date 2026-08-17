@@ -1,8 +1,8 @@
-# Datenschutzerklärung – KI-Text-Finder
+# Datenschutzerklärung – Spot the Bot
 
 Stand: 16. August 2026
 
-KI-Text-Finder ist eine Chrome-Erweiterung, die Textabschnitte der gerade geöffneten Webseite danach einfärbt, wie wahrscheinlich sie KI-generiert sind.
+Spot the Bot ist eine Chrome-Erweiterung, die Textabschnitte der gerade geöffneten Webseite danach einfärbt, wie wahrscheinlich sie KI-generiert sind.
 
 ## Was die Erweiterung verarbeitet
 

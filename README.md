@@ -1,4 +1,4 @@
-# KI-Text-Finder
+# Spot the Bot
 
 ![Chrome Manifest V3](https://img.shields.io/badge/Chrome-Manifest%20V3-4285F4?logo=googlechrome&logoColor=white)
 ![Version](https://img.shields.io/badge/Version-1.0-blue)
