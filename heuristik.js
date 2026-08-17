@@ -4,6 +4,19 @@
 
 const KI_AMPEL_HEURISTIK = (() => {
 
+  // Spracherkennung über Stoppwörter: entscheidet, welche sprachspezifischen
+  // Signale zusätzlich zu den gemeinsamen Musterlisten angewendet werden.
+  const DE_STOPPWOERTER = /\b(der|die|das|und|nicht|ist|ein|eine|für|dass|sich|wird|werden|auch|dem|den|im|bei|oder|aber|wurde|sind|nach|über)\b/gi;
+  const EN_STOPPWOERTER = /\b(the|of|to|that|with|are|it|as|this|by|have|from|they|which|been|and|but|not|has|were|their)\b/gi;
+
+  function erkennSprache(text) {
+    const de = (text.match(DE_STOPPWOERTER) || []).length;
+    const en = (text.match(EN_STOPPWOERTER) || []).length;
+    if (de >= en + 3) return "de";
+    if (en >= de + 3) return "en";
+    return "unbekannt";
+  }
+
   // Eindeutige technische Artefakte: ein Treffer reicht für Rot.
   const HARTE_ARTEFAKTE = [
     { re: /utm_source=chatgpt\.com/i, label: "ChatGPT-Zitierlink (utm_source)" },
@@ -64,8 +77,49 @@ const KI_AMPEL_HEURISTIK = (() => {
       // Parenthetische Striche; Zählung unten pro Vorkommen ab dem zweiten
       re: /(\s[—–]\s|—)/g,
       mindestensTreffer: 2
+    },
+    // Sprachspezifische Signale: gelten nur, wenn die Sprache erkannt wurde.
+    {
+      sprache: "de",
+      label: "Geviertstrich (—) im deutschen Text",
+      gewicht: 2,
+      // Deutsche Typografie nutzt den Halbgeviertstrich (–) mit Leerzeichen;
+      // der englische em-dash ist im Deutschen ein starkes KI-Signal.
+      re: /—/g
+    },
+    {
+      sprache: "de",
+      label: "englischer Anführungszeichen-Stil (”)",
+      gewicht: 1,
+      // Deutsche Anführung ist „…“; das schließende ” kommt im Deutschen nicht vor.
+      re: /”/g
+    },
+    {
+      sprache: "de",
+      label: "Titel-Großschreibung nach englischem Muster",
+      gewicht: 2,
+      // Großgeschriebene Funktionswörter mitten in einer Wortfolge
+      // („Die Wichtigsten Vorteile Im Überblick“)
+      re: /\b[A-ZÄÖÜ][a-zäöüß]+ (?:Im|Für|Und|Der|Die|Das|Von|Zum|Zur|Mit|Auf|Aus|Bei|Nach|Über|Ohne|Gegen|Eine?|Einem|Einer|Eines) [A-ZÄÖÜ][a-zäöüß]+/g
+    },
+    {
+      sprache: "de",
+      label: "steife Synonyme (verstarb, verfasste …)",
+      gewicht: 1,
+      re: /\b(verstarb|verfasste|siedelte über|bediente sich|erachtete|leistete Unterstützung|vermochte)\b/gi
+    },
+    {
+      sprache: "en",
+      label: "steife Synonyme (utilize, boasts …)",
+      gewicht: 1,
+      re: /\b(utiliz(e|es|ed|ing)|boast(s|ed|ing)?|garner(s|ed)?|showcas(es|ed|ing)|underscor(es|ed|ing)|pivotal|holistic)\b/gi
     }
   ];
+
+  const SPRACH_PREFIX = {
+    de: "Analyse auf Deutsch: ",
+    en: "Analyse auf Englisch: "
+  };
 
   function bewerteSegment(text) {
     for (const art of HARTE_ARTEFAKTE) {
@@ -77,9 +131,13 @@ const KI_AMPEL_HEURISTIK = (() => {
       }
     }
 
+    const sprache = erkennSprache(text);
+
     let punkte = 0;
     const getroffen = [];
     for (const sig of SIGNALE) {
+      // Sprachspezifische Signale nur bei erkannter, passender Sprache
+      if (sig.sprache && sig.sprache !== sprache) continue;
       const treffer = text.match(sig.re) || [];
       const minimum = sig.mindestensTreffer || 1;
       if (treffer.length >= minimum) {
@@ -101,10 +159,11 @@ const KI_AMPEL_HEURISTIK = (() => {
     }
 
     const grund =
-      getroffen.length === 0
+      (SPRACH_PREFIX[sprache] || "") +
+      (getroffen.length === 0
         ? "Keine der bekannten KI-Stilmuster gefunden."
         : `Auffälligkeiten: ${getroffen.slice(0, 4).join(", ")}.` +
-          (stufe === "gruen" ? " Häufung reicht nicht für eine Einstufung." : "");
+          (stufe === "gruen" ? " Häufung reicht nicht für eine Einstufung." : ""));
 
     return { stufe, grund };
   }
