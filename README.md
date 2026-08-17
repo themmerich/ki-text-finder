@@ -94,6 +94,19 @@ node tests/run-tests.js
 
 Prüft die Syntax aller Skripte, die Regel-Engine gegen die erwarteten Einstufungen der Testseite und das Content Script (Markierungs-Fälle, Ergebnis-Zurücksetzen) im Headless-Chrome. Läuft als GitHub Action bei jedem Push.
 
+## Mögliche Weiterentwicklung
+
+Für spätere Versionen angedacht, in loser Reihenfolge:
+
+- Kontextmenü-Eintrag, um markierten Text per Rechtsklick zu prüfen
+- Sprung zum nächsten roten Abschnitt aus dem Popup; Trefferzahl als Icon-Badge
+- Ergebnis-Cache pro Seite, damit wiederholte Analysen keine API-Kosten verursachen
+- Englische Oberfläche samt Begründungen in der Seitensprache
+- Analyse von iframe-Inhalten (z. B. eingebettete Kommentarspalten)
+- Test-Button für den API-Key in den Einstellungen
+- Anbindung der Wasserzeichen-Detektions-API von Anthropic, sobald verfügbar
+- Portierung auf Edge und Firefox
+
 ## Grenzen
 
 Die Bewertung ist eine stilistische Einschätzung, kein Nachweis. Sie stützt sich auf bekannte Merkmale KI-generierter Texte (vgl. die Wikipedia-Seite „Signs of AI writing"). Fehleinschätzungen in beide Richtungen sind möglich: Glatter menschlicher Text kann gelb eingestuft werden, nachbearbeiteter KI-Text grün. Kurze Abschnitte (unter 150 Zeichen) werden gar nicht bewertet.
