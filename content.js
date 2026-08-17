@@ -21,13 +21,31 @@
     return style.visibility !== "hidden" && style.display !== "none";
   }
 
-  function collectSegments() {
-    const candidates = Array.from(
+  // Markierter Text: die Auswahl entscheidet, welche Blöcke analysiert werden.
+  // Bewertet und eingefärbt wird weiterhin der ganze Block, damit die Seite
+  // nicht umgebaut werden muss.
+  function selectionRanges() {
+    const sel = window.getSelection();
+    if (!sel || sel.isCollapsed || sel.rangeCount === 0) return [];
+    if (!sel.toString().trim()) return [];
+    const ranges = [];
+    for (let i = 0; i < sel.rangeCount; i++) ranges.push(sel.getRangeAt(i));
+    return ranges;
+  }
+
+  function collectSegments(ranges) {
+    let candidates = Array.from(
       document.querySelectorAll("p, li, blockquote, dd, figcaption")
     ).filter((el) => {
       const text = el.innerText?.trim() || "";
       return text.length >= MIN_CHARS && isVisible(el);
     });
+
+    if (ranges.length > 0) {
+      candidates = candidates.filter((el) =>
+        ranges.some((range) => range.intersectsNode(el))
+      );
+    }
 
     // Verschachtelte Kandidaten (z. B. p in li) nur einmal werten: innersten behalten
     const innermost = candidates.filter(
@@ -78,14 +96,26 @@
       sendResponse({ ok: true });
       return false;
     }
+    // Das Popup fragt beim Öffnen, ob etwas markiert ist, und beschriftet
+    // seinen Button entsprechend.
+    if (message?.cmd === "hasSelection") {
+      sendResponse({ ok: true, hasSelection: selectionRanges().length > 0 });
+      return false;
+    }
     if (message?.cmd !== "analyze") return false;
 
+    const ranges = selectionRanges(); // vor dem Aufräumen lesen
+    const scope = ranges.length > 0 ? "selection" : "page";
+
     clearHighlights();
-    const segments = collectSegments();
+    const segments = collectSegments(ranges);
     if (segments.length === 0) {
       sendResponse({
         ok: false,
-        error: "Keine ausreichend langen Textabschnitte auf dieser Seite gefunden."
+        error:
+          scope === "selection"
+            ? `Der markierte Text ist zu kurz für eine Bewertung (mindestens ${MIN_CHARS} Zeichen).`
+            : "Keine ausreichend langen Textabschnitte auf dieser Seite gefunden."
       });
       return false;
     }
@@ -104,6 +134,7 @@
         ok: true,
         counts,
         total: segments.length,
+        scope,
         mode: result.mode,
         apiError: result.apiError
       });

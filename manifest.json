@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "KI-Text-Finder",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Färbt Textabschnitte der Seite als Ampel (rot/gelb/grün) ein, je nachdem wie wahrscheinlich sie KI-generiert sind.",
   "permissions": ["storage", "scripting", "activeTab"],
   "host_permissions": ["https://api.anthropic.com/*"],

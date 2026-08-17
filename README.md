@@ -51,6 +51,8 @@ Der Key wird nur in `chrome.storage.local` gespeichert und ausschließlich an ap
 
 Icon anklicken → **„Seite analysieren"**. Nach einigen Sekunden sind die Absätze eingefärbt; das Popup zeigt die Verteilung und den verwendeten Analyse-Modus. **„Markierungen entfernen"** stellt die Seite wieder her.
 
+Ist auf der Seite Text markiert, bewertet die Erweiterung nur die Abschnitte, die die Markierung berührt – der Button heißt dann **„Markierten Text analysieren"**. Das spart im Claude-Modus Kosten und Wartezeit und erreicht auch Stellen weit unten auf sehr langen Seiten, wo die Obergrenze von 120 Abschnitten sonst greift. Bewertet und eingefärbt wird immer der ganze Absatz, auch wenn die Markierung nur einen Teil davon abdeckt.
+
 Die Checkbox **„mit KI untersuchen"** steuert den Modus: Ohne hinterlegten Key ist sie ausgegraut und es läuft immer die lokale Erkennung. Mit Key ist sie standardmäßig aktiv, kann aber abgewählt werden, wenn die schnelle, kostenlose Analyse reichen soll. Die Auswahl bleibt gespeichert.
 
 Zum Ausprobieren liegt eine [Testseite](test-seite.html) bei, deren Absätze die typischen Fälle abdecken: Floskel-Häufung und Chatbot-Artefakt, einzelne Auffälligkeiten, unauffälliger Text – jeweils auf Deutsch und Englisch, dazu ein deutscher Absatz mit englischer Typografie.
@@ -61,7 +63,7 @@ Zum Ausprobieren liegt eine [Testseite](test-seite.html) bei, deren Absätze die
 
 | Datei | Aufgabe |
 |---|---|
-| [content.js](content.js) | sammelt sichtbare Textblöcke (`p`, `li`, `blockquote`, `dd`, `figcaption`) ab 150 Zeichen, höchstens 120 pro Seite, und färbt sie nach der Bewertung ein |
+| [content.js](content.js) | sammelt sichtbare Textblöcke (`p`, `li`, `blockquote`, `dd`, `figcaption`) ab 150 Zeichen, höchstens 120 pro Seite, beschränkt sie bei vorhandener Markierung auf die berührten Blöcke und färbt sie nach der Bewertung ein |
 | [background.js](background.js) | Service Worker; entscheidet je nach Key zwischen lokaler Engine und Claude API und bündelt lange Seiten in mehrere Anfragen |
 | [heuristik.js](heuristik.js) | lokale Regel-Engine: Spracherkennung je Abschnitt (Stoppwort-Zählung), gewichteter Punktwert über gemeinsame und sprachspezifische Musterlisten; eindeutige Chatbot-Artefakte führen direkt zu Rot |
 | [popup.js](popup.js) / [popup.html](popup.html) | Popup mit Analyse-Buttons, Modus-Checkbox und Legende |

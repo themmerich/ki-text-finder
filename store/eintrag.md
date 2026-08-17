@@ -19,6 +19,10 @@ Wird automatisch aus der `description` in [manifest.json](../manifest.json) übe
 >
 > Die Begründung zu jedem Abschnitt erscheint als Tooltip, wenn du mit der Maus darüberfährst.
 >
+> GANZE SEITE ODER NUR EIN AUSSCHNITT
+>
+> Ohne Markierung wird die ganze Seite bewertet. Markierst du vorher einen Textabschnitt, prüft die Erweiterung nur diesen Bereich – schneller, günstiger und gezielt bei langen Seiten.
+>
 > ZWEI ANALYSE-MODI
 >
 > Ohne API-Key (Standard): Eine lokale Regel-Engine prüft die Texte auf bekannte KI-Stilmuster – Floskeln, Gedankenstrich-Häufung, Chatbot-Artefakte und mehr. Kostenlos, und kein Text verlässt den Browser.
@@ -45,7 +49,7 @@ Wird automatisch aus der `description` in [manifest.json](../manifest.json) übe
 ## Datenschutz-Formular (Privacy practices)
 
 - **Single purpose:** Bewertet Textabschnitte der aktiven Webseite danach, wie wahrscheinlich sie KI-generiert sind, und färbt sie entsprechend ein.
-- **activeTab / scripting:** Liest nach Klick auf „Seite analysieren" die sichtbaren Textabschnitte der aktiven Seite und färbt sie ein. Kein Zugriff ohne Nutzeraktion.
+- **activeTab / scripting:** Liest nach Klick auf „Seite analysieren" die sichtbaren Textabschnitte der aktiven Seite und färbt sie ein. Beim Öffnen des Popups wird zusätzlich abgefragt, ob auf der Seite Text markiert ist, um den Button passend zu beschriften; dabei wird nur geprüft, ob eine Markierung existiert, nicht deren Inhalt gelesen. Kein Zugriff ohne Nutzeraktion (das Öffnen des Popups ist eine solche).
 - **storage:** Speichert API-Key und Einstellungen lokal auf dem Gerät.
 - **Host-Berechtigung api.anthropic.com:** Sendet im optionalen Claude-Modus die Textabschnitte zur Bewertung an die Claude API.
 - **Datenerhebung:** „Website content" ankreuzen (Textabschnitte der analysierten Seite gehen im Claude-Modus an Anthropic) sowie „Authentication information" für den vom Nutzer selbst hinterlegten API-Key (wird nur lokal gespeichert und an api.anthropic.com übertragen). Keine Weitergabe an weitere Dritte, kein Verkauf, keine Nutzung für fremde Zwecke.
@@ -64,7 +68,7 @@ Wird automatisch aus der `description` in [manifest.json](../manifest.json) übe
 Das Paket enthält nur die Laufzeitdateien: `manifest.json`, `background.js`, `content.js`, `heuristik.js`, `popup.html`, `popup.js`, `options.html`, `options.js`, `icons/`. Neu erzeugen:
 
 ```powershell
-tar -a -c -f store/ki-text-finder-0.2.0.zip manifest.json background.js content.js heuristik.js popup.html popup.js options.html options.js icons
+tar -a -c -f store/ki-text-finder-0.3.0.zip manifest.json background.js content.js heuristik.js popup.html popup.js options.html options.js icons
 ```
 
 Hinweis: bewusst `tar` statt `Compress-Archive` – Letzteres schreibt unter Windows PowerShell 5.1 Backslash-Pfade ins Archiv, daran kann der Store-Upload scheitern.
