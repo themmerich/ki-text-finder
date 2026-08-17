@@ -83,10 +83,9 @@ analysierenBtn.addEventListener("click", async () => {
       setStatus(result?.error || "Unbekannter Fehler", true);
     } else {
       const c = result.counts;
+      const wort = result.total === 1 ? "Abschnitt" : "Abschnitte";
       const umfang =
-        result.scope === "selection"
-          ? "Abschnitte im markierten Bereich"
-          : "Abschnitte";
+        result.scope === "selection" ? `${wort} im markierten Bereich` : wort;
       let text =
         `${result.total} ${umfang} bewertet:\n` +
         `rot: ${c.rot}, gelb: ${c.gelb}, grün: ${c.gruen}\n` +
