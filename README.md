@@ -79,6 +79,7 @@ Ist auf der Seite Text markiert, bewertet die Erweiterung nur die Abschnitte, di
 | [heuristik.js](heuristik.js) | lokale Regel-Engine: Spracherkennung je Abschnitt (Stoppwort-Zählung), gewichteter Punktwert über gemeinsame und sprachspezifische Musterlisten; eindeutige Chatbot-Artefakte führen direkt zu Rot |
 | [popup.js](popup.js) / [popup.html](popup.html) | Popup mit Analyse-Buttons, Modus-Checkbox und Legende |
 | [options.js](options.js) / [options.html](options.html) | Einstellungsseite für API-Key und Modellwahl |
+| [ampel.js](ampel.js) / [modelle.js](modelle.js) | gemeinsame Definitionen: Ampelstufen (Farben, Beschriftungen, Schema-Werte) und Modell-Liste |
 
 Die Claude-Anfragen nutzen Structured Outputs mit festem JSON-Schema, damit die Antwort maschinell auswertbar bleibt. Im lokalen Modus verlässt kein Text den Browser.
 

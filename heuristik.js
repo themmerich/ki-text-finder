@@ -6,15 +6,27 @@ const KI_AMPEL_HEURISTIK = (() => {
 
   // Spracherkennung über Stoppwörter: entscheidet, welche sprachspezifischen
   // Signale zusätzlich zu den gemeinsamen Musterlisten angewendet werden.
-  const DE_STOPPWOERTER = /\b(der|die|das|und|nicht|ist|ein|eine|für|dass|sich|wird|werden|auch|dem|den|im|bei|oder|aber|wurde|sind|nach|über)\b/gi;
-  const EN_STOPPWOERTER = /\b(the|of|to|that|with|are|it|as|this|by|have|from|they|which|been|and|but|not|has|were|their)\b/gi;
+  // Eine weitere Sprache ist ein neuer Tabelleneintrag, sonst nichts.
+  const SPRACHEN = [
+    {
+      code: "de",
+      name: "Deutsch",
+      stopp: /\b(der|die|das|und|nicht|ist|ein|eine|für|dass|sich|wird|werden|auch|dem|den|im|bei|oder|aber|wurde|sind|nach|über)\b/gi
+    },
+    {
+      code: "en",
+      name: "Englisch",
+      stopp: /\b(the|of|to|that|with|are|it|as|this|by|have|from|they|which|been|and|but|not|has|were|their)\b/gi
+    }
+  ];
 
+  // Erkannt ist eine Sprache erst mit deutlichem Vorsprung, sonst null.
   function erkennSprache(text) {
-    const de = (text.match(DE_STOPPWOERTER) || []).length;
-    const en = (text.match(EN_STOPPWOERTER) || []).length;
-    if (de >= en + 3) return "de";
-    if (en >= de + 3) return "en";
-    return "unbekannt";
+    const gezaehlt = SPRACHEN.map((sprache) => ({
+      sprache,
+      n: (text.match(sprache.stopp) || []).length
+    })).sort((a, b) => b.n - a.n);
+    return gezaehlt[0].n >= gezaehlt[1].n + 3 ? gezaehlt[0].sprache : null;
   }
 
   // Eindeutige technische Artefakte: ein Treffer reicht für Rot.
@@ -28,6 +40,13 @@ const KI_AMPEL_HEURISTIK = (() => {
     { re: /\b(ich hoffe, (das|dies) hilft|I hope this helps)\b/i, label: "Chatbot-Dialogrest" },
     { re: /\[(Name|Datum|hier .{0,20}? einfügen|insert .{0,20}?)\]/i, label: "Platzhaltertext" }
   ];
+
+  // Vorfilter: ein kombinierter Scan statt acht Einzeldurchläufe pro Segment.
+  // Die Einzel-Regexe laufen nur noch bei einem Treffer, um das Label zu bestimmen.
+  const ARTEFAKT_VORFILTER = new RegExp(
+    HARTE_ARTEFAKTE.map((a) => a.re.source).join("|"),
+    "i"
+  );
 
   // Weiche Signale: zählen nur in der Häufung. Jedes hat Gewicht und Label.
   const SIGNALE = [
@@ -84,7 +103,9 @@ const KI_AMPEL_HEURISTIK = (() => {
       label: "Geviertstrich (—) im deutschen Text",
       gewicht: 2,
       // Deutsche Typografie nutzt den Halbgeviertstrich (–) mit Leerzeichen;
-      // der englische em-dash ist im Deutschen ein starkes KI-Signal.
+      // der englische em-dash ist im Deutschen ein starkes KI-Signal. Dass er
+      // zusätzlich im gemeinsamen Gedankenstrich-Signal mitzählt, ist gewollt:
+      // Häufung soll eskalieren.
       re: /—/g
     },
     {
@@ -116,18 +137,15 @@ const KI_AMPEL_HEURISTIK = (() => {
     }
   ];
 
-  const SPRACH_PREFIX = {
-    de: "Analyse auf Deutsch: ",
-    en: "Analyse auf Englisch: "
-  };
-
   function bewerteSegment(text) {
-    for (const art of HARTE_ARTEFAKTE) {
-      if (art.re.test(text)) {
-        return {
-          stufe: "rot",
-          grund: `Technisches Artefakt gefunden: ${art.label}. Das kommt in menschlich verfassten Texten praktisch nicht vor.`
-        };
+    if (ARTEFAKT_VORFILTER.test(text)) {
+      for (const art of HARTE_ARTEFAKTE) {
+        if (art.re.test(text)) {
+          return {
+            stufe: "rot",
+            grund: `Technisches Artefakt gefunden: ${art.label}. Das kommt in menschlich verfassten Texten praktisch nicht vor.`
+          };
+        }
       }
     }
 
@@ -137,11 +155,13 @@ const KI_AMPEL_HEURISTIK = (() => {
     const getroffen = [];
     for (const sig of SIGNALE) {
       // Sprachspezifische Signale nur bei erkannter, passender Sprache
-      if (sig.sprache && sig.sprache !== sprache) continue;
+      if (sig.sprache && sig.sprache !== sprache?.code) continue;
       const treffer = text.match(sig.re) || [];
       const minimum = sig.mindestensTreffer || 1;
       if (treffer.length >= minimum) {
-        const zaehlbar = treffer.length - (minimum - 1);
+        // Treffer unterhalb der Schwelle zählen nicht mit: der erste
+        // Gedankenstrich ist noch unauffällig, erst die Häufung zählt.
+        const zaehlbar = treffer.length - minimum + 1;
         punkte += sig.gewicht * Math.min(zaehlbar, 3); // pro Signal gedeckelt
         getroffen.push(`${sig.label} (${treffer.length}×)`);
       }
@@ -159,7 +179,7 @@ const KI_AMPEL_HEURISTIK = (() => {
     }
 
     const grund =
-      (SPRACH_PREFIX[sprache] || "") +
+      (sprache ? `Analyse auf ${sprache.name}: ` : "") +
       (getroffen.length === 0
         ? "Keine der bekannten KI-Stilmuster gefunden."
         : `Auffälligkeiten: ${getroffen.slice(0, 4).join(", ")}.` +
@@ -169,10 +189,7 @@ const KI_AMPEL_HEURISTIK = (() => {
   }
 
   function bewerteSegmente(segments) {
-    return segments.map((s) => {
-      const ergebnis = bewerteSegment(s.text);
-      return { id: s.id, stufe: ergebnis.stufe, grund: ergebnis.grund };
-    });
+    return segments.map((s) => ({ id: s.id, ...bewerteSegment(s.text) }));
   }
 
   return { bewerteSegmente };

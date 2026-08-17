@@ -2,7 +2,6 @@ const statusEl = document.getElementById("status");
 const analysierenBtn = document.getElementById("analysieren");
 const entfernenBtn = document.getElementById("entfernen");
 const mitKiEl = document.getElementById("mitKi");
-const kiOptionLabel = document.getElementById("kiOptionLabel");
 const kiOptionHinweis = document.getElementById("kiOptionHinweis");
 
 // Checkbox-Zustand herstellen: ohne Key ausgegraut, mit Key wählbar
@@ -11,7 +10,6 @@ chrome.storage.local.get(["apiKey", "useKi"]).then(({ apiKey, useKi }) => {
   if (!apiKey) {
     mitKiEl.checked = false;
     mitKiEl.disabled = true;
-    kiOptionLabel.classList.add("deaktiviert");
     kiOptionHinweis.textContent = "(kein API-Key hinterlegt)";
   } else {
     mitKiEl.checked = useKi !== false;
@@ -23,42 +21,58 @@ mitKiEl.addEventListener("change", () => {
   chrome.storage.local.set({ useKi: mitKiEl.checked });
 });
 
+// Legende aus der gemeinsamen Stufen-Definition aufbauen
+const legendeEl = document.getElementById("legende");
+for (const stufe of AMPEL_STUFEN) {
+  const zeile = document.createElement("div");
+  const punkt = document.createElement("span");
+  punkt.className = "punkt";
+  punkt.style.background = stufe.punkt;
+  zeile.append(punkt, stufe.label);
+  legendeEl.appendChild(zeile);
+}
+
 function setStatus(text, isError = false) {
   statusEl.textContent = text;
   statusEl.className = isError ? "fehler" : "";
 }
 
-async function activeTab() {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  return tab;
+// Aktiven Tab einmal ermitteln und das Content Script einmal injizieren;
+// beide Klick-Handler und der Markierungs-Check teilen sich das Ergebnis.
+let tabPromise = null;
+function tabBereit() {
+  if (!tabPromise) {
+    tabPromise = (async () => {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (!tab?.id || !/^(https?|file):/.test(tab.url || "")) {
+        throw new Error("Diese Seite kann nicht analysiert werden.");
+      }
+      await chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        files: ["ampel.js", "content.js"]
+      });
+      return tab;
+    })();
+  }
+  return tabPromise;
 }
 
-async function ensureContentScript(tabId) {
-  await chrome.scripting.executeScript({
-    target: { tabId },
-    files: ["content.js"]
-  });
-}
-
-function analysierbar(tab) {
-  return Boolean(tab?.id) && /^(https?|file):/.test(tab.url || "");
+async function sendToTab(cmd) {
+  const tab = await tabBereit();
+  return chrome.tabs.sendMessage(tab.id, { cmd });
 }
 
 // Beim Öffnen prüfen, ob auf der Seite etwas markiert ist: dann analysiert
 // der Klick nur die markierten Abschnitte, und der Button sagt das auch.
-(async () => {
-  try {
-    const tab = await activeTab();
-    if (!analysierbar(tab)) return;
-    await ensureContentScript(tab.id);
-    const result = await chrome.tabs.sendMessage(tab.id, { cmd: "hasSelection" });
+sendToTab("hasSelection")
+  .then((result) => {
     if (result?.hasSelection) {
       analysierenBtn.textContent = "Markierten Text analysieren";
     }
-  } catch (_) {
-    // Kein Content Script erreichbar: Standardbeschriftung bleibt stehen.
-  }
-})();
+  })
+  .catch(() => {
+    // z. B. chrome://-Seiten: Standardbeschriftung bleibt stehen.
+  });
 
 const MODUS_TEXT = {
   ki: "Analyse: Claude API",
@@ -67,18 +81,11 @@ const MODUS_TEXT = {
 };
 
 analysierenBtn.addEventListener("click", async () => {
-  const tab = await activeTab();
-  if (!analysierbar(tab)) {
-    setStatus("Diese Seite kann nicht analysiert werden.", true);
-    return;
-  }
-
   analysierenBtn.disabled = true;
   setStatus("Analysiere … das kann je nach Textmenge etwas dauern.");
 
   try {
-    await ensureContentScript(tab.id);
-    const result = await chrome.tabs.sendMessage(tab.id, { cmd: "analyze" });
+    const result = await sendToTab("analyze");
     if (!result?.ok) {
       setStatus(result?.error || "Unbekannter Fehler", true);
     } else {
@@ -86,14 +93,14 @@ analysierenBtn.addEventListener("click", async () => {
       const wort = result.total === 1 ? "Abschnitt" : "Abschnitte";
       const umfang =
         result.scope === "selection" ? `${wort} im markierten Bereich` : wort;
+      const zaehlung = AMPEL_STUFEN.map((s) => `${s.kurz}: ${c[s.id]}`).join(", ");
       let text =
-        `${result.total} ${umfang} bewertet:\n` +
-        `rot: ${c.rot}, gelb: ${c.gelb}, grün: ${c.gruen}\n` +
+        `${result.total} ${umfang} bewertet:\n${zaehlung}\n` +
         (MODUS_TEXT[result.mode] || "");
-      if (result.mode === "lokal-fallback" && result.apiError) {
+      if (result.apiError) {
         text += `\n(${result.apiError})`;
       }
-      setStatus(text, result.mode === "lokal-fallback");
+      setStatus(text, Boolean(result.apiError));
     }
   } catch (err) {
     setStatus(String(err.message || err), true);
@@ -103,11 +110,8 @@ analysierenBtn.addEventListener("click", async () => {
 });
 
 entfernenBtn.addEventListener("click", async () => {
-  const tab = await activeTab();
-  if (!tab?.id) return;
   try {
-    await ensureContentScript(tab.id);
-    await chrome.tabs.sendMessage(tab.id, { cmd: "clear" });
+    await sendToTab("clear");
     setStatus("Markierungen entfernt.");
   } catch (err) {
     setStatus(String(err.message || err), true);
