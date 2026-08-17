@@ -69,7 +69,7 @@ Wird automatisch aus der `description` in [manifest.json](../manifest.json) übe
 Das Paket enthält nur die Laufzeitdateien: `manifest.json`, `background.js`, `content.js`, `heuristik.js`, `ampel.js`, `modelle.js`, `popup.html`, `popup.js`, `options.html`, `options.js`, `icons/`. Neu erzeugen:
 
 ```powershell
-tar -a -c -f store/ki-text-finder-0.3.0.zip manifest.json background.js content.js heuristik.js ampel.js modelle.js popup.html popup.js options.html options.js icons
+tar -a -c -f store/ki-text-finder-0.3.1.zip manifest.json background.js content.js heuristik.js ampel.js modelle.js popup.html popup.js options.html options.js icons
 ```
 
 Hinweis: bewusst `tar` statt `Compress-Archive` – Letzteres schreibt unter Windows PowerShell 5.1 Backslash-Pfade ins Archiv, daran kann der Store-Upload scheitern.

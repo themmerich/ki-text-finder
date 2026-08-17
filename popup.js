@@ -62,23 +62,45 @@ async function sendToTab(cmd) {
   return chrome.tabs.sendMessage(tab.id, { cmd });
 }
 
-// Beim Öffnen prüfen, ob auf der Seite etwas markiert ist: dann analysiert
-// der Klick nur die markierten Abschnitte, und der Button sagt das auch.
-sendToTab("hasSelection")
-  .then((result) => {
-    if (result?.hasSelection) {
-      analysierenBtn.textContent = "Markierten Text analysieren";
-    }
-  })
-  .catch(() => {
-    // z. B. chrome://-Seiten: Standardbeschriftung bleibt stehen.
-  });
-
 const MODUS_TEXT = {
   ki: "Analyse: Claude API",
   lokal: "Analyse: lokale Muster-Erkennung",
   "lokal-fallback": "Analyse: lokale Muster-Erkennung (API-Fehler)"
 };
+
+function ergebnisText(result) {
+  const bereich = result.scope === "selection" ? " im markierten Bereich" : "";
+  let kopf;
+  if (result.gesamt > result.total) {
+    // Obergrenze von content.js erreicht: nicht so tun, als wäre alles bewertet
+    kopf = `${result.total} von ${result.gesamt} Abschnitten${bereich} bewertet (Obergrenze erreicht):`;
+  } else {
+    const wort = result.total === 1 ? "Abschnitt" : "Abschnitte";
+    kopf = `${result.total} ${wort}${bereich} bewertet:`;
+  }
+  const zaehlung = AMPEL_STUFEN.map((s) => `${s.kurz}: ${result.counts[s.id]}`).join(", ");
+  let text = `${kopf}\n${zaehlung}\n` + (MODUS_TEXT[result.mode] || "");
+  if (result.apiError) {
+    text += `\n(${result.apiError})`;
+  }
+  return text;
+}
+
+// Beim Öffnen prüfen, ob auf der Seite etwas markiert ist (Button-
+// Beschriftung) und ob es schon ein Analyse-Ergebnis gibt (Statistik
+// wieder anzeigen, die Markierungen stehen ja noch auf der Seite).
+sendToTab("getStatus")
+  .then((status) => {
+    if (status?.hasSelection) {
+      analysierenBtn.textContent = "Markierten Text analysieren";
+    }
+    if (status?.lastResult) {
+      setStatus(ergebnisText(status.lastResult), Boolean(status.lastResult.apiError));
+    }
+  })
+  .catch(() => {
+    // z. B. chrome://-Seiten: Standardbeschriftung bleibt stehen.
+  });
 
 analysierenBtn.addEventListener("click", async () => {
   analysierenBtn.disabled = true;
@@ -89,18 +111,7 @@ analysierenBtn.addEventListener("click", async () => {
     if (!result?.ok) {
       setStatus(result?.error || "Unbekannter Fehler", true);
     } else {
-      const c = result.counts;
-      const wort = result.total === 1 ? "Abschnitt" : "Abschnitte";
-      const umfang =
-        result.scope === "selection" ? `${wort} im markierten Bereich` : wort;
-      const zaehlung = AMPEL_STUFEN.map((s) => `${s.kurz}: ${c[s.id]}`).join(", ");
-      let text =
-        `${result.total} ${umfang} bewertet:\n${zaehlung}\n` +
-        (MODUS_TEXT[result.mode] || "");
-      if (result.apiError) {
-        text += `\n(${result.apiError})`;
-      }
-      setStatus(text, Boolean(result.apiError));
+      setStatus(ergebnisText(result), Boolean(result.apiError));
     }
   } catch (err) {
     setStatus(String(err.message || err), true);

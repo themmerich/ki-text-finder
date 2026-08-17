@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <title>läuft…</title>
+</head>
+<body>
+  <p>Diese Seite enthält vier Arten von Absätzen. Nach der Analyse sollten die Abschnitte unten unterschiedlich eingefärbt sein. Dieser Einleitungsabsatz hier ist bewusst nüchtern geschrieben und sollte grün bleiben, denn er verwendet keine der bekannten Floskeln und kommt ohne rhetorische Muster aus.</p>
+  <p>Darüber hinaus spielt die Digitalisierung eine bedeutende Rolle in der heutigen schnelllebigen Welt. Es ist wichtig zu beachten, dass die nahtlose Integration nicht nur die Effizienz steigert, sondern auch das reiche kulturelle Erbe der Region unterstreicht. Ferner dient die Plattform als facettenreiches Werkzeug.</p>
+  <p>Des Weiteren fungiert das neue Bürgerbüro als zentrale Anlaufstelle für alle Anliegen rund um Meldebescheinigungen und Ausweisdokumente. Es ist erwähnenswert, dass die Wartezeiten seit der Umstellung deutlich gesunken sind. Die Terminvergabe läuft inzwischen vollständig online über das Portal der Stadt.</p>
+  <p>Der Stadtrat hat am Dienstag die Sanierung der Lahnbrücke beschlossen. Die Arbeiten beginnen im März und dauern voraussichtlich acht Monate. Autofahrer müssen mit Umleitungen über die B49 rechnen, der Radweg bleibt aber durchgehend befahrbar. Die Kosten liegen bei rund zwei Millionen Euro.</p>
+  <p>Dieser Absatz ist zu kurz und wird deshalb nicht bewertet.</p>
+
+  <pre id="ergebnis"></pre>
+
+  <script>
+    // chrome-Stub, damit content.js außerhalb der Erweiterung läuft;
+    // sendMessage bewertet über die lokale Regel-Engine.
+    window.chrome = {
+      runtime: {
+        onMessage: { addListener: (fn) => (window.__listener = fn) },
+        sendMessage: (msg, cb) => {
+          cb({
+            ok: true,
+            ratings: KI_AMPEL_HEURISTIK.bewerteSegmente(msg.segments),
+            mode: "lokal"
+          });
+        },
+        lastError: undefined
+      }
+    };
+  </script>
+  <script src="../ampel.js"></script>
+  <script src="../heuristik.js"></script>
+  <script src="../content.js"></script>
+  <script>
+    const fehler = [];
+    function pruefe(name, ist, soll) {
+      const i = JSON.stringify(ist);
+      const s = JSON.stringify(soll);
+      if (i !== s) fehler.push(`${name}: ${i} statt ${s}`);
+    }
+
+    function ruf(cmd) {
+      let antwort = null;
+      window.__listener({ cmd }, null, (r) => (antwort = r));
+      return antwort;
+    }
+
+    function markiere(startEl, startOff, endEl, endOff) {
+      const range = document.createRange();
+      range.setStart(startEl.firstChild, startOff);
+      range.setEnd(endEl.firstChild, endOff);
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }
+
+    const ps = [...document.querySelectorAll("p")];
+
+    // A: ohne Markierung wird die ganze Seite bewertet
+    window.getSelection().removeAllRanges();
+    const status0 = ruf("getStatus");
+    pruefe("A getStatus", { sel: status0.hasSelection, last: status0.lastResult }, { sel: false, last: null });
+    const a = ruf("analyze");
+    pruefe(
+      "A analyze",
+      { total: a.total, gesamt: a.gesamt, scope: a.scope, counts: a.counts },
+      { total: 4, gesamt: 4, scope: "page", counts: { rot: 1, gelb: 1, gruen: 2 } }
+    );
+    pruefe("A lastResult", ruf("getStatus").lastResult?.total, 4);
+
+    // B: Teilmarkierung über zwei Absätze bewertet genau diese beiden
+    markiere(ps[1], 50, ps[2], 40);
+    pruefe("B hasSelection", ruf("getStatus").hasSelection, true);
+    const b = ruf("analyze");
+    pruefe(
+      "B analyze",
+      { total: b.total, scope: b.scope, counts: b.counts },
+      { total: 2, scope: "selection", counts: { rot: 1, gelb: 1, gruen: 0 } }
+    );
+    pruefe(
+      "B gefärbt",
+      ps.map((p) => (p.style.backgroundColor ? 1 : 0)),
+      [0, 1, 1, 0, 0]
+    );
+
+    // C: Entfernen setzt Färbung, Textfarbe und Ergebnis zurück
+    ruf("clear");
+    pruefe("C entfärbt", ps.every((p) => !p.style.backgroundColor && !p.style.color), true);
+    pruefe("C lastResult", ruf("getStatus").lastResult, null);
+
+    // D: zu kurze Markierung liefert den Hinweis statt einer Bewertung
+    markiere(ps[4], 0, ps[4], 30);
+    const d = ruf("analyze");
+    pruefe("D zu kurz", { ok: d.ok, hinweis: /zu kurz/.test(d.error || "") }, { ok: false, hinweis: true });
+
+    document.title = fehler.length ? "FAIL" : "PASS";
+    document.getElementById("ergebnis").textContent = fehler.length
+      ? fehler.join("\n")
+      : "alle Prüfungen bestanden";
+  </script>
+</body>
+</html>
