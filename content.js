@@ -95,7 +95,7 @@
       el.style.backgroundColor = color.bg;
       el.style.color = AMPEL_TEXTFARBE;
       el.style.transition = "background-color 0.3s";
-      el.title = `KI-Text-Finder: ${color.label}\n${rating.grund}`;
+      el.title = `Spot the Bot: ${color.label}\n${rating.grund}`;
       counts[rating.stufe]++;
     }
     return counts;
