@@ -2,10 +2,10 @@
 // klassifiziert sie. Mit hinterlegtem API-Key über die Claude API,
 // ohne Key über die lokale Regel-Engine (heuristik.js).
 
-importScripts("heuristik.js");
+importScripts("heuristik.js", "ampel.js", "modelle.js");
 
 const API_URL = "https://api.anthropic.com/v1/messages";
-const DEFAULT_MODEL = "claude-opus-5";
+const DEFAULT_MODEL = KI_MODELLE[0].id; // erstes Modell der gemeinsamen Liste ist der Standard
 const MAX_CHARS_PER_REQUEST = 40000; // Segmente werden in Blöcke dieser Größe gebündelt
 
 const SYSTEM_PROMPT = `Du bewertest Textabschnitte einer Webseite danach, wie wahrscheinlich sie von einer KI generiert wurden.
@@ -36,7 +36,7 @@ const OUTPUT_SCHEMA = {
         type: "object",
         properties: {
           id: { type: "integer" },
-          stufe: { type: "string", enum: ["rot", "gelb", "gruen"] },
+          stufe: { type: "string", enum: AMPEL_STUFEN.map((s) => s.id) },
           grund: { type: "string" }
         },
         required: ["id", "stufe", "grund"],
@@ -138,13 +138,13 @@ async function classify(segments) {
 
   // Mit API-Key: Claude-Analyse; bei API-Fehlern Rückfall auf die Regel-Engine.
   try {
+    // Die Chunks sind voneinander unabhängig und laufen parallel – lange
+    // Seiten warten sonst auf jede Antwort einzeln.
     const chunks = chunkSegments(segments);
-    const all = [];
-    for (const chunk of chunks) {
-      const ratings = await classifyChunk(apiKey, model || DEFAULT_MODEL, chunk);
-      all.push(...ratings);
-    }
-    return { ratings: all, mode: "ki" };
+    const ergebnisse = await Promise.all(
+      chunks.map((chunk) => classifyChunk(apiKey, model || DEFAULT_MODEL, chunk))
+    );
+    return { ratings: ergebnisse.flat(), mode: "ki" };
   } catch (err) {
     return {
       ratings: KI_AMPEL_HEURISTIK.bewerteSegmente(segments),

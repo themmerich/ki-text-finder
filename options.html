@@ -50,11 +50,7 @@
   </div>
 
   <label for="model">Modell</label>
-  <select id="model">
-    <option value="claude-opus-5">Claude Opus 5 (beste Qualität, Standard)</option>
-    <option value="claude-sonnet-5">Claude Sonnet 5 (schneller, günstiger)</option>
-    <option value="claude-haiku-4-5">Claude Haiku 4.5 (am günstigsten)</option>
-  </select>
+  <select id="model"></select>
   <div class="hinweis">
     Die Kosten pro analysierter Seite liegen je nach Modell und Textmenge
     zwischen einem Bruchteil eines Cents (Haiku) und wenigen Cent (Opus).
@@ -63,6 +59,7 @@
   <button id="speichern">Speichern</button>
   <div id="status"></div>
 
+  <script src="modelle.js"></script>
   <script src="options.js"></script>
 </body>
 </html>

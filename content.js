@@ -1,5 +1,6 @@
 // Content Script: sammelt Textabschnitte, lässt sie im Service Worker
-// klassifizieren und färbt sie als Ampel ein.
+// klassifizieren und färbt sie als Ampel ein. Wird zusammen mit ampel.js
+// injiziert (siehe popup.js).
 
 (() => {
   if (window.__kiAmpelLoaded) return;
@@ -9,15 +10,14 @@
   const MAX_SEGMENTS = 120;
   const MAX_CHARS_PER_SEGMENT = 2000; // pro Abschnitt wird höchstens so viel Text analysiert
 
-  const COLORS = {
-    rot: { bg: "rgba(220, 53, 69, 0.28)", label: "höchstwahrscheinlich KI-generiert" },
-    gelb: { bg: "rgba(255, 193, 7, 0.30)", label: "wahrscheinlich KI-generiert" },
-    gruen: { bg: "rgba(25, 135, 84, 0.16)", label: "vermutlich nicht KI-generiert" }
-  };
+  const COLORS = Object.fromEntries(AMPEL_STUFEN.map((s) => [s.id, s]));
+
+  // Die Elemente des letzten Laufs, Index = Segment-id.
+  let segmentEls = [];
 
   function isVisible(el) {
-    if (!el.offsetParent && getComputedStyle(el).position !== "fixed") return false;
     const style = getComputedStyle(el);
+    if (!el.offsetParent && style.position !== "fixed") return false;
     return style.visibility !== "hidden" && style.display !== "none";
   }
 
@@ -34,39 +34,52 @@
   }
 
   function collectSegments(ranges) {
-    let candidates = Array.from(
+    // innerText erzwingt Layout und ist damit der teuerste Zugriff hier –
+    // deshalb nur einmal pro Element lesen. Geschrieben wird erst in
+    // applyRatings, wenn alle Lesezugriffe vorbei sind.
+    let kandidaten = Array.from(
       document.querySelectorAll("p, li, blockquote, dd, figcaption")
-    ).filter((el) => {
-      const text = el.innerText?.trim() || "";
-      return text.length >= MIN_CHARS && isVisible(el);
-    });
+    )
+      .map((el) => ({ el, text: el.innerText.trim() }))
+      .filter(({ el, text }) => text.length >= MIN_CHARS && isVisible(el));
 
     if (ranges.length > 0) {
-      candidates = candidates.filter((el) =>
+      kandidaten = kandidaten.filter(({ el }) =>
         ranges.some((range) => range.intersectsNode(el))
       );
     }
 
-    // Verschachtelte Kandidaten (z. B. p in li) nur einmal werten: innersten behalten
-    const innermost = candidates.filter(
-      (el) => !candidates.some((other) => other !== el && el.contains(other))
-    );
+    // Verschachtelte Kandidaten (z. B. p in li) nur einmal werten: innersten
+    // behalten. Über die Elternkette statt paarweise contains(), damit der
+    // Aufwand linear mit der Kandidatenzahl wächst.
+    const kandidatenSet = new Set(kandidaten.map((k) => k.el));
+    const hatKandidatenNachfahren = new Set();
+    for (const { el } of kandidaten) {
+      for (let p = el.parentElement; p; p = p.parentElement) {
+        if (kandidatenSet.has(p)) hatKandidatenNachfahren.add(p);
+      }
+    }
 
-    return innermost.slice(0, MAX_SEGMENTS).map((el, i) => {
-      el.dataset.kiAmpelId = String(i);
-      return { id: i, text: el.innerText.trim().slice(0, MAX_CHARS_PER_SEGMENT) };
-    });
+    const segmente = kandidaten
+      .filter(({ el }) => !hatKandidatenNachfahren.has(el))
+      .slice(0, MAX_SEGMENTS);
+    segmentEls = segmente.map(({ el }) => el);
+    return segmente.map(({ text }, i) => ({
+      id: i,
+      text: text.slice(0, MAX_CHARS_PER_SEGMENT)
+    }));
   }
 
   function applyRatings(ratings) {
-    let counts = { rot: 0, gelb: 0, gruen: 0 };
+    const counts = Object.fromEntries(AMPEL_STUFEN.map((s) => [s.id, 0]));
     for (const rating of ratings) {
-      const el = document.querySelector(`[data-ki-ampel-id="${rating.id}"]`);
+      const el = segmentEls[rating.id];
       const color = COLORS[rating.stufe];
       if (!el || !color) continue;
-      if (!el.dataset.kiAmpelOrigBg) {
-        el.dataset.kiAmpelOrigBg = el.style.backgroundColor || "__leer__";
-        el.dataset.kiAmpelOrigTitle = el.title || "__leer__";
+      if (!("kiAmpelOrigBg" in el.dataset)) {
+        el.dataset.kiAmpelId = String(rating.id); // Marker für clearHighlights
+        el.dataset.kiAmpelOrigBg = el.style.backgroundColor;
+        el.dataset.kiAmpelOrigTitle = el.title;
       }
       el.style.backgroundColor = color.bg;
       el.style.transition = "background-color 0.3s";
@@ -78,12 +91,8 @@
 
   function clearHighlights() {
     for (const el of document.querySelectorAll("[data-ki-ampel-id]")) {
-      if (el.dataset.kiAmpelOrigBg !== undefined) {
-        el.style.backgroundColor =
-          el.dataset.kiAmpelOrigBg === "__leer__" ? "" : el.dataset.kiAmpelOrigBg;
-        el.title =
-          el.dataset.kiAmpelOrigTitle === "__leer__" ? "" : el.dataset.kiAmpelOrigTitle;
-      }
+      el.style.backgroundColor = el.dataset.kiAmpelOrigBg || "";
+      el.title = el.dataset.kiAmpelOrigTitle || "";
       delete el.dataset.kiAmpelId;
       delete el.dataset.kiAmpelOrigBg;
       delete el.dataset.kiAmpelOrigTitle;
