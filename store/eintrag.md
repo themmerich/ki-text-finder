@@ -45,11 +45,19 @@ Wird automatisch aus der `description` in [manifest.json](../manifest.json) übe
 ## Grafiken
 
 - Store-Icon 128×128: [icons/icon128.png](../icons/icon128.png)
+- Werbekacheln (optional, aber hochladen): [store/werbekacheln/](werbekacheln/) — `kachel-klein.png` (440×280) und `kachel-gross.png` (1400×560)
 - Screenshots 1280×800: [store/screenshots/](screenshots/)
   - `markierte-seite.png` – Testseite mit Ampel-Markierung und Tooltip
   - `auswahl.png` – markierter Text: nur die berührten Absätze werden bewertet
   - `popup.png` – Popup mit Analyse-Ergebnis
   - `einstellungen.png` – Einstellungsseite
+
+## Weitere Felder (Store-Eintrag)
+
+- Offizielle URL: „Keine" (nur mit Search-Console-Domain möglich)
+- URL der Startseite: https://github.com/themmerich/ki-text-finder
+- Support-URL: https://github.com/themmerich/ki-text-finder/issues
+- Nicht jugendfreie Inhalte: aus
 
 ## Datenschutz-Formular (Privacy practices)
 
